@@ -3,34 +3,34 @@ import collections
 import fileinput
 import itertools
 
-template = None
 rules = {}
+pair_count = collections.Counter()
+letter_count = collections.Counter()
 
 for line in fileinput.input():
     line = line.strip()
-    if template is None:
-        template = line
+    if len(pair_count) == 0:
+        pair_count.update(''.join(pair) for pair in itertools.pairwise(line))
+        letter_count.update(line)
         continue
     elif len(line):
         pair, element = line.split(" -> ")
         rules[pair] = element
 
 
-def expand(template):
-    while True:
-        polymer = []
-        for a,b in itertools.pairwise(template):
-            polymer.append(a)
-            polymer.append(rules[a+b])
-        polymer.append(b)
-        yield ''.join(polymer)
+def expand():
+    next_pair_count = collections.Counter()
+    for pair in pair_count.keys():
+        new_a = pair[0] + rules[pair]
+        new_b = rules[pair] + pair[1]
+        next_pair_count[new_a] += pair_count[pair]
+        next_pair_count[new_b] += pair_count[pair]
+        letter_count[rules[pair]] += pair_count[pair]
+    return next_pair_count
 
 
-def part1(polymer):
-    for _ in range(10):
-        polymer = next(expand(polymer))
-    elements = collections.Counter(polymer).most_common()
-    return elements[0][1] - elements[-1][1]
+for _ in range(40):
+    pair_count = expand()
 
-
-print(part1(template))
+elements = letter_count.most_common()
+print(elements[0][1] - elements[-1][1])
